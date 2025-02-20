@@ -29,7 +29,7 @@ jobs:
           buildozer -v android debug  # APK build karega
       
       - name: Upload APK  # APK ko save karne ka step
-       uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4  # INDENTATION FIXED ✅
         with:
           name: QuranApp
           path: bin/*.apk  # Jo bhi `.apk` file generate hogi, usko store karega
