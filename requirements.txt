@@ -1,0 +1,7 @@
+kivy
+kivymd
+sqlite3
+pyttsx3
+gtts
+speechrecognition
+requests
