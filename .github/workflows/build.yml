@@ -1,0 +1,35 @@
+name: Build APK  # Workflow ka naam
+
+on:
+  push:
+    branches:
+      - main  # Jab koi main branch pe push karega to build start hoga
+
+jobs:
+  build:
+    runs-on: ubuntu-latest  # Linux system use hoga
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.9
+
+      - name: Install Buildozer Dependencies
+        run: |
+          sudo apt update && sudo apt install -y python3-pip
+          pip install --upgrade pip
+          pip install buildozer cython
+
+      - name: Build APK
+        run: |
+          buildozer init  # Ensure buildozer.spec file is present
+          buildozer -v android debug  # APK build karega
+      
+      - name: Upload APK  # APK ko save karne ka step
+        uses: actions/upload-artifact@v2
+        with:
+          name: QuranApp
+          path: bin/*.apk  # Jo bhi `.apk` file generate hogi, usko store karega
