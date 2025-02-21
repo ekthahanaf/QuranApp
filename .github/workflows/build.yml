@@ -1,35 +1,44 @@
-name: Build APK  # Workflow ka naam
+name: Build Kivy APK
 
-on:
-  push:
-    branches:
-      - main  # Jab koi main branch pe push karega to build start hoga
+on: [push, workflow_dispatch]
 
 jobs:
   build:
-    runs-on: ubuntu-latest  # Linux system use hoga
+    runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - name: Setup Python
-        uses: actions/setup-python@v3
-        with:
-          python-version: 3.9
-
-      - name: Install Buildozer Dependencies
+      - name: Install System Dependencies
         run: |
-          sudo apt update && sudo apt install -y python3-pip
+          sudo apt update && sudo apt install -y openjdk-17-jdk python3-pip unzip
+
+      - name: Setup Android SDK
+        run: |
+          export ANDROID_SDK_ROOT=$HOME/android-sdk
+          mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+          cd $ANDROID_SDK_ROOT/cmdline-tools
+          wget https://dl.google.com/android/repository/commandlinetools-linux-10406996_latest.zip -O sdk-tools.zip
+          unzip sdk-tools.zip -d latest
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager --licenses
+          yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "platform-tools" "build-tools;34.0.0" "platforms;android-34" "cmdline-tools;latest"
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+          echo "PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH" >> $GITHUB_ENV
+
+      - name: Install Python Dependencies
+        run: |
           pip install --upgrade pip
-          pip install buildozer cython
+          pip install buildozer cython virtualenv
 
-      - name: Build APK
+      - name: Build APK using Buildozer
         run: |
-          buildozer init  # Ensure buildozer.spec file is present
-          buildozer -v android debug  # APK build karega
-      
-      - name: Upload APK  # APK ko save karne ka step
-        uses: actions/upload-artifact@v4  # INDENTATION FIXED ✅
+          export PATH=$ANDROID_SDK_ROOT/cmdline-tools/latest/bin:$ANDROID_SDK_ROOT/platform-tools:$PATH
+          buildozer android debug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v3
         with:
-          name: QuranApp
-          path: bin/*.apk  # Jo bhi `.apk` file generate hogi, usko store karega
+          name: QuranApp-APK
+          path: bin/*.apk
